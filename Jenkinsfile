@@ -5,7 +5,7 @@ node {
         }
 
         stage ('Test') {
-        
-        sh 'python3 -m unittest --junit-xml test-reports/results.xml sources/test_calc.py'
+        docker.image('qnib/pytest')
+        sh 'pytest --junit-xml test-reports/results.xml sources/test_calc.py'
         }
 }
