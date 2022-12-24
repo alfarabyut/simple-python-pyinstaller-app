@@ -1,1 +1,1 @@
-'testpollscm 6'
+'testpollscm 7'
