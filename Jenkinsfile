@@ -41,8 +41,9 @@ pipeline {
                     unstash(name: 'compiled-results') 
                     sh "docker run --rm -v ${VOLUME} ${IMAGE} 'pyinstaller -F add2vals.py'" 
                 }
+                timeout(60) {
                 input message: 'Lanjutkan ke tahap Deploy?'
-                sleep(60) 
+                }
             }
             post {
                 success {
