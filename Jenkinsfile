@@ -16,26 +16,7 @@ node {
         }
         stage('Deploy') {      
                 unstash 'compiled-results'    
-                sh 'docker run --rm -v "$(pwd)/sources:/src" cdrx/pyinstaller-linux "pyinstaller -F /src/add2vals.py"'
                 archiveArtifacts 'sources/dist/add2vals'
-                sh 'docker run --rm -v "$(pwd)/sources:/src" cdrx/pyinstaller-linux "rm -rf /src/build /src/dist"'
-                dir('/home/simple-python-pyinstaller-app') {
-                    sh 'git init'
-                    sh 'heroku git:remote -a "hidden-spire-45548"'
-                    sh 'git push heroku master'
-                }
                 sleep time: 1, unit: 'MINUTES'
         }
-                timeout(60) {
-                input message: 'Lanjutkan ke tahap Deploy?'
-                }
-            }
-            post {
-                success {
-                    archiveArtifacts "${env.BUILD_ID}/sources/dist/add2vals" 
-                    sh "docker run --rm -v ${VOLUME} ${IMAGE} 'rm -rf build dist'"
-                }
-            }
-        }
-    }
 }
