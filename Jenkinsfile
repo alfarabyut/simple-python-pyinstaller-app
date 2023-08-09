@@ -1,53 +1,29 @@
-pipeline {
-    agent none
-    stages {
-        stage('Build') {
-            agent {
-                docker {
-                    image 'python:2-alpine'
-                }
+node {
+        stage('Build') { 
+            docker.image('python:2-alpine').inside {
+                    sh 'python -m py_compile sources/add2vals.py sources/calc.py' 
+                    stash includes: 'sources/*.py', name: 'compiled-results' 	
             }
-            steps {
-                sh 'python -m py_compile sources/add2vals.py sources/calc.py'
-                stash(name: 'compiled-results', includes: 'sources/*.py*')
-            }
-        }
+        }             
         stage('Test') {
-            agent {
-                docker {
-                    image 'qnib/pytest'
-                }
-            }
-            steps {
+            docker.image('qnib/pytest:latest').inside {
                 sh 'py.test --junit-xml test-reports/results.xml sources/test_calc.py'
-            }
-            post {
-                always {
-                    junit 'test-reports/results.xml'
-                }
+                junit 'test-reports/results.xml'
             }
         }
-        stage("Manual Approval") {
-            agent {
-                docker {
-                    image 'python:2-alpine'
-                }
-            }
-            steps {
-                input message: 'Lanjutkan ke tahap Deploy?'
-            }
+        stage('Manual Approval') {
+            input message: 'Lanjutkan ke tahap Deploy?', ok: 'Proceed'
         }
-        stage("Deploy") {
-            agent {
-                docker {
-                    image 'python:2-alpine'
+        stage('Deploy') {      
+                unstash 'compiled-results'    
+                sh 'docker run --rm -v "$(pwd)/sources:/src" cdrx/pyinstaller-linux "pyinstaller -F /src/add2vals.py"'
+                archiveArtifacts 'sources/dist/add2vals'
+                sh 'docker run --rm -v "$(pwd)/sources:/src" cdrx/pyinstaller-linux "rm -rf /src/build /src/dist"'
+                dir('/home/simple-python-pyinstaller-app') {
+                    sh 'git init'
+                    sh 'heroku git:remote -a "hidden-spire-45548"'
+                    sh 'git push heroku master'
                 }
-            }
-            steps {
-                sh './jenkins/scripts/deliver.sh'
-                sleep 60
-                sh './jenkins/scripts/kill.sh' 
-            }
+                sleep time: 1, unit: 'MINUTES'
         }
-    }
 }
