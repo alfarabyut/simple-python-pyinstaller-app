@@ -26,4 +26,16 @@ node {
                 }
                 sleep time: 1, unit: 'MINUTES'
         }
+                timeout(60) {
+                input message: 'Lanjutkan ke tahap Deploy?'
+                }
+            }
+            post {
+                success {
+                    archiveArtifacts "${env.BUILD_ID}/sources/dist/add2vals" 
+                    sh "docker run --rm -v ${VOLUME} ${IMAGE} 'rm -rf build dist'"
+                }
+            }
+        }
+    }
 }
