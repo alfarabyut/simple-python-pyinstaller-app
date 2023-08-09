@@ -1,8 +1,5 @@
 pipeline {
     agent none
-    options {
-        skipStagesAfterUnstable()
-    }
     stages {
         stage('Build') {
             agent {
@@ -30,25 +27,26 @@ pipeline {
                 }
             }
         }
-        stage('Deploy') { 
-            agent any
-            environment { 
-                VOLUME = '$(pwd)/sources:/src'
-                IMAGE = 'cdrx/pyinstaller-linux:python2'
+        stage("Manual Approval") {
+            agent {
+                docker {
+                    image 'python:2-alpine'
+                }
             }
             steps {
-                dir(path: env.BUILD_ID) { 
-                    unstash(name: 'compiled-results') 
-                    sh "docker run --rm -v ${VOLUME} ${IMAGE} 'pyinstaller -F add2vals.py'" 
-                }
-                sleep(60)
                 input message: 'Lanjutkan ke tahap Deploy?'
             }
-            post {
-                success {
-                    archiveArtifacts "${env.BUILD_ID}/sources/dist/add2vals" 
-                    sh "docker run --rm -v ${VOLUME} ${IMAGE} 'rm -rf build dist'"
+        }
+        stage("Deploy") {
+            agent {
+                docker {
+                    image 'python:2-alpine'
                 }
+            }
+            steps {
+                sh './jenkins/scripts/deliver.sh'
+                sleep 60
+                sh './jenkins/scripts/kill.sh' 
             }
         }
     }
