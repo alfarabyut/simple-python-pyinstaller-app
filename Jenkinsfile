@@ -16,7 +16,7 @@ node {
         }
         stage('Deploy') {      
                 unstash 'compiled-results'    
-                archiveArtifacts 'sources/dist/add2vals'
+                archiveArtifacts 'sources/'
                 sleep time: 1, unit: 'MINUTES'
         }
 }
